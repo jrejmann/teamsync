@@ -6,13 +6,16 @@ import {
   updateTask,
   deleteTask,
 } from "../controllers/tasks.controller";
+import { validate } from "../middleware/validate.middleware";
+import { idParamSchema } from "../validation/common.schema";
 
 const router = Router();
 
 router.get("/", getAllTasks);
+router.get("/:id", validate(idParamSchema), getTaskById);
+
 router.post("/", createTask);
-router.get("/:id", getTaskById);
-router.patch("/:id", updateTask);
-router.delete("/:id", deleteTask);
+router.patch("/:id", validate(idParamSchema), updateTask);
+router.delete("/:id", validate(idParamSchema), deleteTask);
 
 export default router;

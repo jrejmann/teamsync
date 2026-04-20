@@ -13,6 +13,7 @@ async function main() {
   const project = await prisma.project.create({
     data: {
       name: "Projekt Testowy",
+      code: "PT",
       tasks: {
         create: [
           { title: "Zrobić zakupy", status: "TODO" },

@@ -1,17 +1,8 @@
 import { z } from "zod";
 import { TaskStatus } from "@prisma/client";
 
-export const taskIdParamSchema = z.object({
-  id: z.coerce.number().int().positive(),
-});
-
-export const listTasksQuerySchema = z.object({
-  page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
-});
-
 export const createTaskBodySchema = z.object({
-  title: z.string().trim().min(1).max(500),
+  title: z.string().trim().min(1).max(200),
   status: z.enum(TaskStatus).optional(),
   projectId: z.number().int().positive().optional(),
 });

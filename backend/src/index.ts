@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 
 import prisma from "./lib/prisma";
 import tasksRoutes from "./routes/tasks.routes";
+import projectsRouter from "./routes/projects.routes";
 import { errorHandler } from "./middleware/error.middleware";
 
 dotenv.config();
@@ -24,6 +25,7 @@ app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
+app.use("/projects", projectsRouter);
 app.use("/tasks", tasksRoutes);
 
 app.use(errorHandler);
