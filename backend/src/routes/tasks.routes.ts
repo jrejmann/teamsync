@@ -15,10 +15,44 @@ import {
   createTaskRequestSchema,
   updateTaskRequestSchema,
 } from "../validation/tasks.schema";
+import {
+  createComment,
+  deleteComment,
+  getCommentsByTaskId,
+  updateComment,
+} from "../controllers/comments.controller";
+import {
+  createCommentRequestSchema as createCommentReq,
+  taskCommentParamSchema,
+  taskIdParamSchema,
+  updateCommentRequestSchema,
+} from "../validation/comments.schema";
 
 const router = Router();
 
 router.get("/", validate(listQueryRequestSchema), getAllTasks);
+
+router.get(
+  "/:taskId/comments",
+  validate(taskIdParamSchema),
+  getCommentsByTaskId,
+);
+router.post(
+  "/:taskId/comments",
+  validate(createCommentReq),
+  createComment,
+);
+router.patch(
+  "/:taskId/comments/:commentId",
+  validate(updateCommentRequestSchema),
+  updateComment,
+);
+router.delete(
+  "/:taskId/comments/:commentId",
+  validate(taskCommentParamSchema),
+  deleteComment,
+);
+
 router.get("/:id", validate(idParamSchema), getTaskById);
 
 router.post("/", validate(createTaskRequestSchema), createTask);
