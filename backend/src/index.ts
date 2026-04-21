@@ -19,10 +19,19 @@ const corsOptions = process.env.CORS_ORIGIN
   : undefined;
 
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: "256kb" }));
 
 app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok" });
+});
+
+app.get("/health/ready", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({ status: "ready" });
+  } catch {
+    res.status(503).json({ status: "not_ready" });
+  }
 });
 
 app.use("/projects", projectsRouter);
@@ -34,9 +43,13 @@ const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
+const SHUTDOWN_MS = 15_000;
+
 function shutdown(signal: string): void {
   console.log(`${signal} received, closing server`);
+  const timeout = setTimeout(() => process.exit(1), SHUTDOWN_MS);
   server.close(() => {
+    clearTimeout(timeout);
     void prisma.$disconnect().then(() => process.exit(0));
   });
 }

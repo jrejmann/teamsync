@@ -2,12 +2,12 @@ import { Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { AppError } from "../lib/appError";
 import { asyncHandler } from "../lib/asyncHandler";
-import {
-  createTaskBodySchema,
-  updateTaskBodySchema,
+import type {
+  CreateTaskBody,
+  UpdateTaskBody,
 } from "../validation/tasks.schema";
 
-import { IdParams, listQuerySchema } from "../validation/common.schema";
+import type { IdParams, ListQuery } from "../validation/common.schema";
 
 async function assertProjectExists(projectId: number): Promise<void> {
   const project = await prisma.project.findUnique({
@@ -19,7 +19,7 @@ async function assertProjectExists(projectId: number): Promise<void> {
 }
 
 export const getAllTasks = asyncHandler(async (req: Request, res: Response) => {
-  const { page, limit } = listQuerySchema.parse(req.query);
+  const { page, limit } = req.query as unknown as ListQuery;
   const skip = (page - 1) * limit;
 
   const [tasks, total] = await prisma.$transaction([
@@ -60,16 +60,25 @@ export const getTasksByProjectId = asyncHandler(
   async (req: Request<IdParams>, res: Response) => {
     const { id: projectId } = req.params;
 
-    const tasks = await prisma.project
-      .findUniqueOrThrow({ where: { id: projectId } })
-      .tasks();
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      include: {
+        tasks: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
 
-    res.json(tasks || []);
+    if (!project) {
+      throw new AppError(404, "Project not found", "PROJECT_NOT_FOUND");
+    }
+
+    res.json(project.tasks);
   },
 );
 
 export const createTask = asyncHandler(async (req: Request, res: Response) => {
-  const body = createTaskBodySchema.parse(req.body);
+  const body = req.body as CreateTaskBody;
 
   if (body.projectId != null) {
     await assertProjectExists(body.projectId);
@@ -89,7 +98,7 @@ export const createTask = asyncHandler(async (req: Request, res: Response) => {
 export const updateTask = asyncHandler(
   async (req: Request<IdParams>, res: Response) => {
     const { id } = req.params;
-    const body = updateTaskBodySchema.parse(req.body);
+    const body = req.body as UpdateTaskBody;
 
     if (typeof body.projectId === "number") {
       await assertProjectExists(body.projectId);

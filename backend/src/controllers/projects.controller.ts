@@ -1,20 +1,21 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma";
+import { AppError } from "../lib/appError";
 
 import { asyncHandler } from "../lib/asyncHandler";
-import { IdParams, listQuerySchema } from "../validation/common.schema";
+import type { IdParams, ListQuery } from "../validation/common.schema";
 
-import {
-  createProjectBodySchema,
-  updateProjectBodySchema,
+import type {
+  CreateProjectBody,
+  UpdateProjectBody,
 } from "../validation/projects.schema";
 
 export const getAllProjects = asyncHandler(
   async (req: Request, res: Response) => {
-    const { page, limit } = listQuerySchema.parse(req.query);
+    const { page, limit } = req.query as unknown as ListQuery;
     const skip = (page - 1) * limit;
 
-    const [projects, total] = await prisma?.$transaction([
+    const [projects, total] = await prisma.$transaction([
       prisma.project.findMany({
         orderBy: { createdAt: "desc" },
         skip,
@@ -39,7 +40,11 @@ export const getProjectById = asyncHandler(
   async (req: Request<IdParams>, res: Response) => {
     const { id } = req.params;
 
-    const project = await prisma.project.findUniqueOrThrow({ where: { id } });
+    const project = await prisma.project.findUnique({ where: { id } });
+
+    if (!project) {
+      throw new AppError(404, "Project not found", "PROJECT_NOT_FOUND");
+    }
 
     res.json(project);
   },
@@ -47,7 +52,7 @@ export const getProjectById = asyncHandler(
 
 export const createProject = asyncHandler(
   async (req: Request, res: Response) => {
-    const body = createProjectBodySchema.parse(req.body);
+    const body = req.body as CreateProjectBody;
 
     const newProject = await prisma.project.create({
       data: { name: body.name, code: body.code },
@@ -60,7 +65,7 @@ export const createProject = asyncHandler(
 export const updateProject = asyncHandler(
   async (req: Request<IdParams>, res: Response) => {
     const { id } = req.params;
-    const body = updateProjectBodySchema.parse(req.body);
+    const body = req.body as UpdateProjectBody;
 
     const updatedProject = await prisma.project.update({
       where: { id },

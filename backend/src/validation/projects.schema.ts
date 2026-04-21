@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { idSchema } from "./common.schema";
+
 const projectCodeSchema = z
   .string()
   .trim()
@@ -18,3 +20,15 @@ export const updateProjectBodySchema = z
   .refine((body) => body.name !== undefined || body.code !== undefined, {
     message: "At least one of name or code is required",
   });
+
+export type CreateProjectBody = z.infer<typeof createProjectBodySchema>;
+export type UpdateProjectBody = z.infer<typeof updateProjectBodySchema>;
+
+export const createProjectRequestSchema = z.object({
+  body: createProjectBodySchema,
+});
+
+export const updateProjectRequestSchema = z.object({
+  params: idSchema,
+  body: updateProjectBodySchema,
+});
